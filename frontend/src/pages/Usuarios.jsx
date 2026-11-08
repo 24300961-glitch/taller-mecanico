@@ -44,6 +44,7 @@ export default function Usuarios() {
   const puedeEditar = tienePermiso('USUARIOS_EDITAR') || tienePermiso('ROLES_ASIGNAR');
   const puedeSuspender = tienePermiso('USUARIOS_SUSPENDER') || tienePermiso('ROLES_ASIGNAR');
   const puedeCrear = tienePermiso('ROLES_ASIGNAR');
+  const esAdmin = tienePermiso('ROLES_ASIGNAR');
   const puedeRoles = tienePermiso('ROLES_CREAR') || tienePermiso('ROLES_ASIGNAR');
   const verAcciones = puedeEditar || puedeSuspender;
   const [usuarios, setUsuarios] = useState(null);
@@ -250,24 +251,30 @@ export default function Usuarios() {
                   {verAcciones && (
                     <td className="text-end">
                       <div className="d-flex justify-content-end gap-2">
-                        {puedeEditar && (
-                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => abrirEdicion(u)}>
-                            Editar
-                          </button>
-                        )}
-                        {puedeSuspender && (me && u.email === me.email ? (
-                          <span className="text-muted small align-self-center">Tu cuenta</span>
+                        {u.administrativo && !esAdmin ? (
+                          <span className="text-muted small align-self-center">Solo Admin</span>
                         ) : (
-                          <BotonCargando
-                            type="button"
-                            className={`btn btn-sm ${u.enabled ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                            cargando={ocupadoId === u.id}
-                            textoCargando="Guardando..."
-                            onClick={() => cambiarEstado(u)}
-                          >
-                            {u.enabled ? 'Suspender' : 'Reactivar'}
-                          </BotonCargando>
-                        ))}
+                          <>
+                            {puedeEditar && (
+                              <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => abrirEdicion(u)}>
+                                Editar
+                              </button>
+                            )}
+                            {puedeSuspender && (me && u.email === me.email ? (
+                              <span className="text-muted small align-self-center">Tu cuenta</span>
+                            ) : (
+                              <BotonCargando
+                                type="button"
+                                className={`btn btn-sm ${u.enabled ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                                cargando={ocupadoId === u.id}
+                                textoCargando="Guardando..."
+                                onClick={() => cambiarEstado(u)}
+                              >
+                                {u.enabled ? 'Suspender' : 'Reactivar'}
+                              </BotonCargando>
+                            ))}
+                          </>
+                        )}
                       </div>
                     </td>
                   )}

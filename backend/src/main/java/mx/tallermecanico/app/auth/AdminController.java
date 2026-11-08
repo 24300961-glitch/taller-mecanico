@@ -276,6 +276,8 @@ public class AdminController {
         m.put("fullName", u.getFullName());
         m.put("rolId", u.getRol() == null ? null : u.getRol().getId());
         m.put("rol", u.getRol() == null ? null : u.getRol().getNombre());
+        m.put("administrativo", u.getRol() != null
+                && (u.getRol().tiene(Permiso.ROLES_ASIGNAR) || u.getRol().tiene(Permiso.ROLES_CREAR)));
         m.put("enabled", u.isEnabled());
         m.put("ultimoAcceso", u.getLastLoginAt() == null ? null : u.getLastLoginAt().toString());
         m.put("registro", u.getCreatedAt() == null ? null : u.getCreatedAt().toString());
