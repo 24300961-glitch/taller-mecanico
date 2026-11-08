@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import mx.tallermecanico.app.audit.AuditService;
+import mx.tallermecanico.app.common.Texto;
 import mx.tallermecanico.app.seguridad.Permiso;
 import mx.tallermecanico.app.seguridad.Rol;
 import mx.tallermecanico.app.seguridad.RolRepository;
@@ -46,6 +47,14 @@ public class AdminController {
 
     public record AsignarRolRequest(@NotNull(message = "Selecciona un rol") Long rolId) {}
 
+    /** Datos editables de una cuenta existente.
+     * @param fullName nombre visible
+     * @param email correo de acceso normalizado
+     */
+    public record EditarUsuarioRequest(
+            @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 100) String fullName,
+            @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Email @jakarta.validation.constraints.Size(max = 190) String email) {}
+
     /** Datos para crear una cuenta desde el panel administrativo.
      * @param email correo de acceso
      * @param fullName nombre visible
@@ -74,6 +83,47 @@ public class AdminController {
         UserAccount created = userCreation.createForRole(request.email(), request.fullName(), request.password(),
                 request.confirmPassword(), request.recoveryPhone(), request.rolId());
         return vista(created);
+    }
+
+    /** Actualiza nombre y correo de una cuenta existente.
+     * @param id identificador de la cuenta
+     * @param request datos validados del formulario
+     * @param authentication usuario que ejecuta la edición
+     * @return perfil actualizado y mensaje de resultado
+     * @throws ResponseStatusException si la cuenta no existe, el correo está duplicado o el rol no permite editar cuentas administrativas
+     */
+    @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyAuthority('USUARIOS_EDITAR','ROLES_ASIGNAR')")
+    @Transactional
+    public Map<String, Object> editar(@PathVariable Long id, @Valid @RequestBody EditarUsuarioRequest request,
+                                      Authentication authentication) {
+        UserAccount user = users.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El usuario seleccionado no existe"));
+        if (esCuentaAdministrativa(user) && !tieneAutoridad(authentication, "ROLES_ASIGNAR")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo un administrador puede editar cuentas administrativas.");
+        }
+        String emailAnterior = user.getEmail();
+        String nombreAnterior = user.getFullName();
+        String emailNuevo = Texto.correo(request.email());
+        if (emailNuevo == null || emailNuevo.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo es obligatorio.");
+        }
+        if (!emailNuevo.equals(emailAnterior) && users.existsByEmail(emailNuevo)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese correo ya pertenece a otra cuenta.");
+        }
+        user.setFullName(request.fullName());
+        user.setEmail(emailNuevo);
+        users.save(user);
+        audit.record("USER_ACCOUNT", user.getId(), "USUARIO_EDITADO", user.getEmail(),
+                "nombre: " + nombreAnterior + " -> " + user.getFullName()
+                        + "; correo: " + emailAnterior + " -> " + user.getEmail());
+        if (!emailAnterior.equals(emailNuevo)) {
+            sesiones.expirarSesiones(emailAnterior);
+        }
+        Map<String, Object> r = vista(user);
+        r.put("message", "Datos de " + user.getFullName() + " actualizados.");
+        return r;
     }
 
     /** Lista cuentas disponibles para administración.
@@ -135,7 +185,7 @@ public class AdminController {
      * @return perfil actualizado y mensaje de resultado
      */
     @PatchMapping("/{id}/suspender")
-    @PreAuthorize("hasAuthority('ROLES_ASIGNAR')")
+    @PreAuthorize("hasAnyAuthority('USUARIOS_SUSPENDER','ROLES_ASIGNAR')")
     @Transactional
     public Map<String, Object> suspender(@PathVariable Long id, Authentication authentication) {
         return cambiarEstatus(id, authentication, false);
@@ -147,7 +197,7 @@ public class AdminController {
      * @return perfil actualizado y mensaje de resultado
      */
     @PatchMapping("/{id}/reactivar")
-    @PreAuthorize("hasAuthority('ROLES_ASIGNAR')")
+    @PreAuthorize("hasAnyAuthority('USUARIOS_SUSPENDER','ROLES_ASIGNAR')")
     @Transactional
     public Map<String, Object> reactivar(@PathVariable Long id, Authentication authentication) {
         return cambiarEstatus(id, authentication, true);
@@ -163,6 +213,10 @@ public class AdminController {
     private Map<String, Object> cambiarEstatus(Long id, Authentication authentication, boolean activar) {
         UserAccount user = users.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El usuario seleccionado no existe"));
+        if (esCuentaAdministrativa(user) && !tieneAutoridad(authentication, "ROLES_ASIGNAR")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo un administrador puede suspender o reactivar cuentas administrativas.");
+        }
         if (user.isEnabled() == activar) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     activar ? "La cuenta ya está activa." : "La cuenta ya está suspendida.");
@@ -190,6 +244,25 @@ public class AdminController {
                 ? "Cuenta de " + user.getFullName() + " reactivada. Ya puede iniciar sesión."
                 : "Cuenta de " + user.getFullName() + " suspendida. Sus sesiones abiertas se cerraron.");
         return r;
+    }
+
+    /** Indica si la cuenta tiene permisos de administración.
+     * @param u cuenta a evaluar
+     * @return true cuando puede crear roles o asignarlos
+     */
+    private static boolean esCuentaAdministrativa(UserAccount u) {
+        return u.getRol() != null
+                && (u.getRol().tiene(Permiso.ROLES_ASIGNAR) || u.getRol().tiene(Permiso.ROLES_CREAR));
+    }
+
+    /** Comprueba una autoridad concreta en la sesión actual.
+     * @param authentication sesión autenticada
+     * @param autoridad permiso buscado
+     * @return true si la sesión tiene ese permiso
+     */
+    private static boolean tieneAutoridad(Authentication authentication, String autoridad) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> autoridad.equals(a.getAuthority()));
     }
 
     /** Convierte una cuenta en su representación pública administrativa.

@@ -27,10 +27,25 @@ function validarAlta(d) {
   return e;
 }
 
+function validarEdicion(d) {
+  const e = {};
+  const nombre = d.fullName.trim();
+  if (!nombre) e.fullName = 'El nombre es obligatorio.';
+  else if (nombre.length < 3 || nombre.length > 100) e.fullName = 'El nombre debe tener entre 3 y 100 caracteres.';
+  else if (!RX.NOMBRE_100.test(nombre)) e.fullName = 'El nombre contiene caracteres no permitidos.';
+  const email = d.email.trim();
+  if (!email) e.email = 'El correo es obligatorio.';
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Escribe un correo válido.';
+  return e;
+}
+
 export default function Usuarios() {
   const { me, tienePermiso } = useAuth();
-  const puedeAsignar = tienePermiso('ROLES_ASIGNAR');
-  const puedeRoles = tienePermiso('ROLES_CREAR') || puedeAsignar;
+  const puedeEditar = tienePermiso('USUARIOS_EDITAR') || tienePermiso('ROLES_ASIGNAR');
+  const puedeSuspender = tienePermiso('USUARIOS_SUSPENDER') || tienePermiso('ROLES_ASIGNAR');
+  const puedeCrear = tienePermiso('ROLES_ASIGNAR');
+  const puedeRoles = tienePermiso('ROLES_CREAR') || tienePermiso('ROLES_ASIGNAR');
+  const verAcciones = puedeEditar || puedeSuspender;
   const [usuarios, setUsuarios] = useState(null);
   const [roles, setRoles] = useState([]);
   const [error, setError] = useState('');
@@ -39,7 +54,12 @@ export default function Usuarios() {
   const [ocupadoAlta, setOcupadoAlta] = useState(false);
   const [form, setForm] = useState(VACIO);
   const [erroresAlta, setErroresAlta] = useState({});
+  const [editando, setEditando] = useState(null);
+  const [formEdit, setFormEdit] = useState({ fullName: '', email: '' });
+  const [erroresEdit, setErroresEdit] = useState({});
+  const [ocupadoEdit, setOcupadoEdit] = useState(false);
   const general = useAlerta();
+  const edicion = useAlerta();
   const { push, zona } = useToasts();
 
   const cargar = async () => {
@@ -53,7 +73,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     cargar();
-    if (puedeAsignar) {
+    if (puedeCrear) {
       api('/api/admin/roles')
         .then((lista) => setRoles(lista || []))
         .catch(() => setRoles([]));
@@ -68,7 +88,15 @@ export default function Usuarios() {
     setAltaAbierta(true);
   };
 
+  const abrirEdicion = (u) => {
+    setEditando(u);
+    setFormEdit({ fullName: u.fullName || '', email: u.email || '' });
+    setErroresEdit({});
+    edicion.limpiar();
+  };
+
   const setF = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const setFE = (k) => (e) => setFormEdit((f) => ({ ...f, [k]: e.target.value }));
 
   const enviarAlta = async (ev) => {
     ev.preventDefault();
@@ -104,6 +132,32 @@ export default function Usuarios() {
     }
   };
 
+  const enviarEdicion = async (ev) => {
+    ev.preventDefault();
+    const e = validarEdicion(formEdit);
+    setErroresEdit(e);
+    if (Object.keys(e).length > 0) {
+      edicion.mostrar('danger', 'Corrige los campos marcados antes de continuar.');
+      return;
+    }
+    setOcupadoEdit(true);
+    edicion.limpiar();
+    try {
+      const r = await api(`/api/admin/usuarios/${editando.id}`, {
+        method: 'PATCH',
+        body: { fullName: formEdit.fullName.trim(), email: formEdit.email.trim() },
+      });
+      setUsuarios((lista) => (lista || []).map((x) => (x.id === editando.id ? { ...x, fullName: r.fullName, email: r.email } : x)));
+      setEditando(null);
+      push(r.message || 'Datos actualizados', true);
+    } catch (err) {
+      edicion.mostrarError(err);
+      if (err.data && err.data.errores) setErroresEdit(err.data.errores);
+    } finally {
+      setOcupadoEdit(false);
+    }
+  };
+
   const cambiarEstado = async (u) => {
     const suspender = u.enabled;
     const pregunta = suspender
@@ -129,10 +183,10 @@ export default function Usuarios() {
       <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
         <div>
           <h2 className="h5 fw-bold mb-1">Cuentas registradas</h2>
-          <p className="text-muted mb-0 small">Consulta, alta y suspensión de usuarios y el rol que tienen asignado.</p>
+          <p className="text-muted mb-0 small">Consulta, alta, edición y suspensión de usuarios y el rol que tienen asignado.</p>
         </div>
         <div className="d-flex gap-2">
-          {puedeAsignar && (
+          {puedeCrear && (
             <button type="button" className="btn btn-accent" onClick={abrirAlta}>
               + Nuevo usuario
             </button>
@@ -163,20 +217,20 @@ export default function Usuarios() {
                 <th>Estado</th>
                 <th>Último acceso</th>
                 <th>Registro</th>
-                {puedeAsignar && <th className="text-end">Acciones</th>}
+                {verAcciones && <th className="text-end">Acciones</th>}
               </tr>
             </thead>
             <tbody>
               {usuarios === null && !error && (
                 <tr>
-                  <td colSpan={puedeAsignar ? 7 : 6} className="empty-state">
+                  <td colSpan={verAcciones ? 7 : 6} className="empty-state">
                     Cargando usuarios...
                   </td>
                 </tr>
               )}
               {usuarios !== null && usuarios.length === 0 && (
                 <tr>
-                  <td colSpan={puedeAsignar ? 7 : 6} className="empty-state">
+                  <td colSpan={verAcciones ? 7 : 6} className="empty-state">
                     Aún no hay usuarios registrados.
                   </td>
                 </tr>
@@ -193,21 +247,28 @@ export default function Usuarios() {
                   </td>
                   <td className="small">{u.ultimoAcceso ? fechaCortaFecha(u.ultimoAcceso) : 'Nunca'}</td>
                   <td className="small">{u.registro ? fechaCortaFecha(u.registro) : texto(null)}</td>
-                  {puedeAsignar && (
+                  {verAcciones && (
                     <td className="text-end">
-                      {me && u.email === me.email ? (
-                        <span className="text-muted small">Tu cuenta</span>
-                      ) : (
-                        <BotonCargando
-                          type="button"
-                          className={`btn btn-sm ${u.enabled ? 'btn-outline-warning' : 'btn-outline-success'}`}
-                          cargando={ocupadoId === u.id}
-                          textoCargando="Guardando..."
-                          onClick={() => cambiarEstado(u)}
-                        >
-                          {u.enabled ? 'Suspender' : 'Reactivar'}
-                        </BotonCargando>
-                      )}
+                      <div className="d-flex justify-content-end gap-2">
+                        {puedeEditar && (
+                          <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => abrirEdicion(u)}>
+                            Editar
+                          </button>
+                        )}
+                        {puedeSuspender && (me && u.email === me.email ? (
+                          <span className="text-muted small align-self-center">Tu cuenta</span>
+                        ) : (
+                          <BotonCargando
+                            type="button"
+                            className={`btn btn-sm ${u.enabled ? 'btn-outline-warning' : 'btn-outline-success'}`}
+                            cargando={ocupadoId === u.id}
+                            textoCargando="Guardando..."
+                            onClick={() => cambiarEstado(u)}
+                          >
+                            {u.enabled ? 'Suspender' : 'Reactivar'}
+                          </BotonCargando>
+                        ))}
+                      </div>
                     </td>
                   )}
                 </tr>
@@ -294,6 +355,43 @@ export default function Usuarios() {
               </select>
             </Campo>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        abierto={!!editando}
+        titulo="Editar usuario"
+        onCerrar={() => setEditando(null)}
+        onSubmit={enviarEdicion}
+        pie={
+          <BotonCargando type="submit" className="btn btn-accent" cargando={ocupadoEdit} textoCargando="Guardando...">
+            Guardar cambios
+          </BotonCargando>
+        }
+      >
+        {edicion.alerta && (
+          <Alerta
+            tipo={edicion.alerta.tipo}
+            mensaje={edicion.alerta.mensaje}
+            detalles={edicion.alerta.detalles}
+            onCerrar={edicion.limpiar}
+          />
+        )}
+        <Campo label="Nombre completo" required htmlFor="edNombre" error={erroresEdit.fullName}>
+          <input
+            id="edNombre" type="text" className={`form-control${erroresEdit.fullName ? ' is-invalid' : ''}`}
+            value={formEdit.fullName} onChange={setFE('fullName')} autoComplete="off" maxLength="100"
+          />
+        </Campo>
+        <Campo label="Correo" required htmlFor="edEmail" error={erroresEdit.email}>
+          <input
+            id="edEmail" type="email" className={`form-control${erroresEdit.email ? ' is-invalid' : ''}`}
+            value={formEdit.email} onChange={setFE('email')} autoComplete="off" maxLength="190"
+          />
+        </Campo>
+        <div className="form-text">
+          Si cambias el correo, el usuario deberá iniciar sesión de nuevo. El rol se cambia desde
+          {' '}<Link to="/roles">Asignar roles</Link>.
         </div>
       </Modal>
       {zona}

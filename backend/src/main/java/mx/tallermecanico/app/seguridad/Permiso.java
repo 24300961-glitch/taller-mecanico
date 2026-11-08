@@ -2,6 +2,8 @@ package mx.tallermecanico.app.seguridad;
 
 public enum Permiso {
     USUARIOS_CONSULTAR("Consultar usuarios"),
+    USUARIOS_EDITAR("Editar datos de usuarios"),
+    USUARIOS_SUSPENDER("Suspender y reactivar usuarios"),
     ROLES_CREAR("Crear roles"),
     ROLES_ASIGNAR("Asignar roles a usuarios"),
     CLIENTES_CONSULTAR("Consultar clientes"),
