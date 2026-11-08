@@ -6,6 +6,14 @@ import ComboTaller from '../components/ComboTaller.jsx';
 import { Alerta, BotonCargando, Campo, enfocarPrimerError, EstadoBadge, Modal, useAlerta, useToasts } from '../components/ui.jsx';
 
 const TAMANO_PAGINA = 10;
+const MAX_FOTOS_VEH = 5;
+const MAX_BYTES_FOTO = 15 * 1024 * 1024;
+const EXTENSIONES_FOTO = ['jpg', 'jpeg', 'png', 'webp'];
+
+function primeraFotoVeh(fotos) {
+  return (fotos || '').split(',').map((s) => s.trim()).filter(Boolean)[0] || '';
+}
+
 const VACIO_CLIENTE = {
   nombre: '', apellidoPaterno: '', apellidoMaterno: '', telefono: '', telefonoAlterno: '',
   telefonoPersonal: '', telefonoTrabajo: '', nombreContacto: '', telefonoContacto: '',
@@ -119,6 +127,8 @@ export default function Clientes() {
   const [erroresV, setErroresV] = useState({});
   const [talleresVeh, setTalleresVeh] = useState([]);
   const [ocupadoV, setOcupadoV] = useState(false);
+  const [subiendoFotosV, setSubiendoFotosV] = useState(false);
+  const [errorFotosV, setErrorFotosV] = useState('');
   const modalVh = useAlerta();
 
   // Modal desactivar
@@ -360,6 +370,8 @@ export default function Clientes() {
   const abrirVehiculo = async (v) => {
     setFormV({ tallerId: '', placa: '', marca: '', modelo: '', anio: '', vin: '', color: '', version: '', kilometraje: '', fotos: '' });
     setErroresV({});
+    setErrorFotosV('');
+    setSubiendoFotosV(false);
     modalVh.limpiar();
     setVehEditId(v ? v.id : null);
     try {
@@ -448,6 +460,58 @@ export default function Clientes() {
     } finally {
       setOcupadoV(false);
     }
+  };
+
+  const fotosActualesV = (formV.fotos || '').split(',').map((s) => s.trim()).filter(Boolean);
+
+  const subirFotosV = async (ev) => {
+    const archivos = Array.from(ev.target.files || []);
+    ev.target.value = '';
+    if (archivos.length === 0) return;
+    if (fotosActualesV.length + archivos.length > MAX_FOTOS_VEH) {
+      setErrorFotosV(`Puedes agregar hasta ${MAX_FOTOS_VEH} fotos por vehículo.`);
+      return;
+    }
+    for (const f of archivos) {
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (!EXTENSIONES_FOTO.includes(ext) || (f.type && !f.type.startsWith('image/'))) {
+        setErrorFotosV('Solo se admiten fotos (JPG, PNG o WebP). No se permiten documentos.');
+        return;
+      }
+      if (f.size > MAX_BYTES_FOTO) {
+        setErrorFotosV(`La foto ${f.name} excede el tamaño máximo permitido de 15 MB.`);
+        return;
+      }
+    }
+    setErrorFotosV('');
+    setSubiendoFotosV(true);
+    try {
+      const nuevas = [];
+      for (const archivo of archivos) {
+        const datos = new FormData();
+        datos.append('foto', archivo);
+        const r = await api('/api/vehiculos/fotos', { method: 'POST', body: datos });
+        nuevas.push(r.ruta);
+      }
+      const total = [...fotosActualesV, ...nuevas].join(',');
+      if (total.length > 500) {
+        setErrorFotosV('Las fotos no deben exceder 500 caracteres en total.');
+        return;
+      }
+      setFormV((actual) => ({ ...actual, fotos: total }));
+    } catch (e) {
+      setErrorFotosV(e.message || 'No se pudo subir la foto.');
+    } finally {
+      setSubiendoFotosV(false);
+    }
+  };
+
+  const quitarFotoV = (ruta) => {
+    setFormV((actual) => ({
+      ...actual,
+      fotos: (actual.fotos || '').split(',').map((s) => s.trim()).filter((x) => x && x !== ruta).join(','),
+    }));
+    setErrorFotosV('');
   };
 
   const abrirDesactivar = (tipo, id, descripcion) => {
@@ -689,8 +753,20 @@ export default function Clientes() {
                                 <tr key={v.id}>
                                   <td className="fw-semibold">{v.placa}</td>
                                   <td className="small">
-                                    {v.marca} {v.modelo} {v.anio}
-                                    {v.color ? ` · ${v.color}` : ''}
+                                    <div className="d-flex align-items-center gap-2">
+                                      {primeraFotoVeh(v.fotos) ? (
+                                        <img
+                                          src={primeraFotoVeh(v.fotos)} alt="Foto del vehículo"
+                                          style={{ width: 46, height: 36, objectFit: 'cover', borderRadius: 4, border: '1px solid #dee2e6' }}
+                                        />
+                                      ) : (
+                                        <span className="text-muted text-center" style={{ width: 46 }} title="Sin fotos">—</span>
+                                      )}
+                                      <div>
+                                        {v.marca} {v.modelo} {v.anio}
+                                        {v.color ? ` · ${v.color}` : ''}
+                                      </div>
+                                    </div>
                                   </td>
                                   <td>
                                     <EstadoBadge activo={v.activo} textoActivo="Activo" textoInactivo="Desactivado" />
@@ -1012,10 +1088,35 @@ export default function Clientes() {
               <input id="vKilometraje" name="kilometraje" type="number" min="0" step="1" inputMode="numeric" className={`form-control${erroresV.kilometraje ? ' is-invalid' : ''}`} required value={formV.kilometraje} onChange={(e) => setFormV({ ...formV, kilometraje: e.target.value })} />
             </Campo>
           </div>
-          <div className="col-md-4">
-            <Campo label="Rutas de fotos (separadas por coma)" htmlFor="vFotos" error={erroresV.fotos}>
-              <input id="vFotos" name="fotos" className={`form-control${erroresV.fotos ? ' is-invalid' : ''}`} maxLength="500" value={formV.fotos} onChange={(e) => setFormV({ ...formV, fotos: e.target.value })} />
-            </Campo>
+          <div className="col-12">
+            <label className="form-label" htmlFor="vFotos">Fotos del vehículo</label>
+            <input
+              id="vFotos" name="fotos" type="file"
+              className={`form-control${erroresV.fotos || errorFotosV ? ' is-invalid' : ''}`}
+              accept="image/jpeg,image/png,image/webp" multiple onChange={subirFotosV} disabled={subiendoFotosV}
+            />
+            <div className="form-text">Solo fotos JPG, PNG o WebP (nada de documentos). Hasta {MAX_FOTOS_VEH} fotos, máximo 15 MB cada una.</div>
+            {(erroresV.fotos || errorFotosV) && <div className="invalid-feedback d-block">{errorFotosV || erroresV.fotos}</div>}
+            {subiendoFotosV && <div className="small text-muted mt-1">Subiendo foto...</div>}
+            {fotosActualesV.length > 0 && (
+              <div className="d-flex flex-wrap gap-2 mt-2">
+                {fotosActualesV.map((ruta) => (
+                  <div key={ruta} className="position-relative">
+                    <img
+                      src={ruta} alt="Foto del vehículo"
+                      style={{ width: 104, height: 78, objectFit: 'cover', borderRadius: 6, border: '1px solid #dee2e6' }}
+                    />
+                    <button
+                      type="button" className="btn btn-danger position-absolute top-0 end-0"
+                      style={{ padding: '0 6px', lineHeight: 1.2, fontSize: 12 }}
+                      onClick={() => quitarFotoV(ruta)} title="Quitar foto"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Modal>

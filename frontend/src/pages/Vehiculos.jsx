@@ -342,6 +342,17 @@ export default function Vehiculos() {
       setErrorFotos(`Puedes agregar hasta ${MAX_FOTOS} fotos por vehículo.`);
       return;
     }
+    for (const f of archivos) {
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext) || (f.type && !f.type.startsWith('image/'))) {
+        setErrorFotos('Solo se admiten fotos (JPG, PNG o WebP). No se permiten documentos.');
+        return;
+      }
+      if (f.size > 15 * 1024 * 1024) {
+        setErrorFotos(`La foto ${f.name} excede el tamaño máximo permitido de 15 MB.`);
+        return;
+      }
+    }
     setErrorFotos('');
     setSubiendoFotos(true);
     try {
@@ -582,7 +593,7 @@ export default function Vehiculos() {
               className={`form-control${errores.fotos || errorFotos ? ' is-invalid' : ''}`}
               accept="image/jpeg,image/png,image/webp" multiple onChange={subirFotos} disabled={subiendoFotos}
             />
-            <div className="form-text">JPG, PNG o WebP. Hasta {MAX_FOTOS} fotos, 15 MB cada una.</div>
+            <div className="form-text">Solo fotos JPG, PNG o WebP (nada de documentos). Hasta {MAX_FOTOS} fotos, máximo 15 MB cada una.</div>
             {(errores.fotos || errorFotos) && <div className="invalid-feedback d-block">{errorFotos || errores.fotos}</div>}
             {subiendoFotos && <div className="small text-muted mt-1">Subiendo foto...</div>}
             {fotosActuales.length > 0 && (
