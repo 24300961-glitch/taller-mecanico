@@ -7,6 +7,11 @@ import { Alerta, BotonCargando, Campo, enfocarPrimerError, EstadoBadge, Modal, u
 import { RX, digitos } from '../api.js';
 
 const VACIO_VEH = { tallerId: '', placa: '', marca: '', modelo: '', anio: '', vin: '', color: '', version: '', kilometraje: '', fotos: '' };
+const MAX_FOTOS = 5;
+
+function primeraFoto(fotos) {
+  return (fotos || '').split(',').map((s) => s.trim()).filter(Boolean)[0] || '';
+}
 
 function validarVehiculo(d) {
   const e = {};
@@ -47,6 +52,8 @@ export default function Vehiculos() {
   const [errores, setErrores] = useState({});
   const [talleres, setTalleres] = useState([]);
   const [ocupadoGuardar, setOcupadoGuardar] = useState(false);
+  const [subiendoFotos, setSubiendoFotos] = useState(false);
+  const [errorFotos, setErrorFotos] = useState('');
   const modalM = useAlerta();
 
   // Autocomplete de propietario
@@ -325,6 +332,47 @@ export default function Vehiculos() {
     setForm((f) => ({ ...f, [k]: v }));
   };
 
+  const fotosActuales = (form.fotos || '').split(',').map((s) => s.trim()).filter(Boolean);
+
+  const subirFotos = async (ev) => {
+    const archivos = Array.from(ev.target.files || []);
+    ev.target.value = '';
+    if (archivos.length === 0) return;
+    if (fotosActuales.length + archivos.length > MAX_FOTOS) {
+      setErrorFotos(`Puedes agregar hasta ${MAX_FOTOS} fotos por vehículo.`);
+      return;
+    }
+    setErrorFotos('');
+    setSubiendoFotos(true);
+    try {
+      const nuevas = [];
+      for (const archivo of archivos) {
+        const datos = new FormData();
+        datos.append('foto', archivo);
+        const r = await api('/api/vehiculos/fotos', { method: 'POST', body: datos });
+        nuevas.push(r.ruta);
+      }
+      const total = [...fotosActuales, ...nuevas].join(',');
+      if (total.length > 500) {
+        setErrorFotos('Las fotos no deben exceder 500 caracteres en total.');
+        return;
+      }
+      setForm((f) => ({ ...f, fotos: total }));
+    } catch (e) {
+      setErrorFotos(e.message || 'No se pudo subir la foto.');
+    } finally {
+      setSubiendoFotos(false);
+    }
+  };
+
+  const quitarFoto = (ruta) => {
+    setForm((f) => ({
+      ...f,
+      fotos: (f.fotos || '').split(',').map((s) => s.trim()).filter((x) => x && x !== ruta).join(','),
+    }));
+    setErrorFotos('');
+  };
+
   return (
     <Layout titulo="Vehículos" subtitulo="Consulta, registro y estatus por taller y propietario">
       {general.alerta && (
@@ -383,8 +431,20 @@ export default function Vehiculos() {
                   <td className="small text-muted">#{v.id}</td>
                   <td className="fw-semibold">{v.placa}</td>
                   <td className="small">
-                    {[v.marca, v.modelo, v.anio].filter(Boolean).join(' ')}
-                    {v.color ? ` · ${v.color}` : ''}
+                    <div className="d-flex align-items-center gap-2">
+                      {primeraFoto(v.fotos) ? (
+                        <img
+                          src={primeraFoto(v.fotos)} alt="Foto del vehículo"
+                          style={{ width: 46, height: 36, objectFit: 'cover', borderRadius: 4, border: '1px solid #dee2e6' }}
+                        />
+                      ) : (
+                        <span className="text-muted text-center" style={{ width: 46 }} title="Sin fotos">—</span>
+                      )}
+                      <div>
+                        {[v.marca, v.modelo, v.anio].filter(Boolean).join(' ')}
+                        {v.color ? ` · ${v.color}` : ''}
+                      </div>
+                    </div>
                   </td>
                   <td className="small">{v.vin || '—'}</td>
                   <td className="small">{v.cliente ? `${v.cliente} (#${v.clienteId})` : '—'}</td>
@@ -515,10 +575,35 @@ export default function Vehiculos() {
               <input id="vhKilometraje" name="kilometraje" type="number" min="0" step="1" inputMode="numeric" className={`form-control${errores.kilometraje ? ' is-invalid' : ''}`} required value={form.kilometraje} onChange={setV('kilometraje')} />
             </Campo>
           </div>
-          <div className="col-md-4">
-            <Campo label="Rutas de fotos (separadas por coma)" htmlFor="vhFotos" error={errores.fotos}>
-              <input id="vhFotos" name="fotos" className={`form-control${errores.fotos ? ' is-invalid' : ''}`} maxLength="500" value={form.fotos} onChange={setV('fotos')} />
-            </Campo>
+          <div className="col-12">
+            <label className="form-label" htmlFor="vhFotos">Fotos del vehículo</label>
+            <input
+              id="vhFotos" name="fotos" type="file"
+              className={`form-control${errores.fotos || errorFotos ? ' is-invalid' : ''}`}
+              accept="image/jpeg,image/png,image/webp" multiple onChange={subirFotos} disabled={subiendoFotos}
+            />
+            <div className="form-text">JPG, PNG o WebP. Hasta {MAX_FOTOS} fotos, 15 MB cada una.</div>
+            {(errores.fotos || errorFotos) && <div className="invalid-feedback d-block">{errorFotos || errores.fotos}</div>}
+            {subiendoFotos && <div className="small text-muted mt-1">Subiendo foto...</div>}
+            {fotosActuales.length > 0 && (
+              <div className="d-flex flex-wrap gap-2 mt-2">
+                {fotosActuales.map((ruta) => (
+                  <div key={ruta} className="position-relative">
+                    <img
+                      src={ruta} alt="Foto del vehículo"
+                      style={{ width: 104, height: 78, objectFit: 'cover', borderRadius: 6, border: '1px solid #dee2e6' }}
+                    />
+                    <button
+                      type="button" className="btn btn-danger position-absolute top-0 end-0"
+                      style={{ padding: '0 6px', lineHeight: 1.2, fontSize: 12 }}
+                      onClick={() => quitarFoto(ruta)} title="Quitar foto"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Modal>
