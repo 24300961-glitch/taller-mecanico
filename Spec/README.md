@@ -13,7 +13,7 @@ Migración y completado con funcionalidad en vivo. Sin crear datos de prueba en 
 ## MODULOS IMPLEMENTADOS (63/63 VERIFICADOS)
 
 ### 1. AUTENTICACIÓN Y SEGURIDAD
-- Login: `admin@taller.local` / `Adm1n1str4d0rT4ll3r!2026#`
+- Login local: `admin@taller.local` / contraseña definida en tu `.env` (no se documenta)
 - Campo email (no username)
 - Token CSRF en POSTs
 - Sesión expira al reiniciar contenedor
