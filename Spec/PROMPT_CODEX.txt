@@ -1,0 +1,88 @@
+PARA COPIAR Y USAR CON /INIT O TU HERRAMIENTA DE IA CODE GENERATION:
+
+# SISTEMA TALLER MECANICO - PROMPT COMPLETO PARA CODEX
+
+## CONTEXTO
+Sistema taller mecánico React 18 + Vite + Spring Boot 3. Ya tiene 63/63 puntos verificados en vivo. NO crear datos de prueba en BD. Despliegue por parche de jar (builds Docker atascados por DNS intermitente).
+
+## ESTRUCTURA
+- backend/: Spring Boot Maven
+- frontend/: React 18 + Vite
+- Dockerfile multi-etapa
+
+## ENTIDADES YA IMPLEMENTADAS
+1. Cliente: soft-delete (activo, motivoDesactivacion, desactivadoEn, desactivadoPor)
+2. Vehiculo: marca(40), modelo(60), anio(int), placa(String+unique), vin(String+unique, 17chars sin I O Q), color(String(30)), version(String(30)), kilometraje(Integer), fotos(String(500)), clienteManyToOne, tallerManyToOne, activo(boolean default true)
+3. Taller: nombre, activo, asociaciones cliente-taller many-to-many
+4. Roles: 8 roles con authorities ROLE_<CLAVE>
+
+## MODULOS A GENERAR
+
+### A. ADMIN CLIENTES
+- Tabla paginada GET /api/clientes/pagina?page&size con filtros y 10 por página
+- Editar por fila, soft-delete/reactivar
+- Bloquear alta duplicados error 409 con mensaje: "Ya existe un cliente con el correo... Elimina o reactiva"
+- Filtro nombre/email/telefono/id
+- Checkbox "Incluir desactivados"
+- Acceso: Admin + Recepcionista
+
+### B. REGISTRO CLIENTE
+- Formulario completo con todas las validaciones RFC, teléfono 10 dígitos, CP ↔ estado
+- Si correo existe → error 409 "Ya existe un cliente con el correo... Elimina o reactiva"
+- Si no existe → INSERT 201
+
+### C. VEHÍCULO - COMPLETO
+- Registrar con todas las validaciones: VIN 17chars sin I O Q, Placa mayúsculas+guion, Año 1900-actual+1, Kilometraje≥0
+- Autocomplete cliente con búsqueda + casillas
+- Combo buscable talleres con filtro en vivo
+- Marca/modelo texto libre con patrones RX_MARCA/RX_MODELO
+- CRUD: consultar por cliente/placa/vin, actualizar, desactivar/reactivar
+- Historial movimientos vehículos
+
+### D. SEGURIDAD
+- Login: campo email
+- 8 roles: ADMINISTRADOR_DE_TALLER, RECEPCIONISTA, CLIENTE, MAESTRO_MECANICO, ASESOR_DE_SERVICIO, TECNICO_DE_CONSULTA, SISTEMA, JEFE_DE_OPERACIONES
+- Permisos en application.properties (actualizar Recepcionista con CLIENTES_EDITAR+DESACTIVAR)
+- CSRF token en POSTs
+- Sesión expira al reiniciar contenedor
+
+### E. DASHBOARD
+- Solo: 'Hola, [nombre] [rol]' + insignia
+- 0 tarjetas, 0 accesos rápidos
+- Menú lateral fijo
+
+### F. FRONTEND PÁGINAS
+- Login/Registro/Recuperar/Reset-password (diseño azul unificado)
+- Dashboard administrador
+- Clientes (lista + alta + búsqueda)
+- Vehículos (alta + consulta + actualizar)
+- Talleres
+- Citas
+- Usuarios (admin solo)
+
+## PATRONES OBLIGATORIOS
+1. Validaciones javax.validation en request DTOs
+2. NegocioException con HttpStatus.CONFLICT(409) o BAD_REQUEST(400)
+3. Soft-delete NUNCA borrar físicamente
+4. Authorities ROLE_<CLAVE>
+5. Combo buscable: input filtro + lista scroll + casillas + contador + Escape/clic fuera
+6. Dashboard admin: solo saludo + insignia
+7. Fotos: String rutas separadas por coma, max 500 chars
+8. Codificación Windows: File.ReadAllText/WriteAllText con UTF8Encoding($false), verificar por bytes FFFD
+
+## ARCHIVOS CLAVE
+- backend/src/main/java/.../ClienteService.java (bloquea duplicados)
+- backend/src/main/java/.../VehiculoService.java (normaliza VIN/Placa)
+- frontend/src/pages/Clientes.jsx (UI admin)
+- frontend/src/pages/Dashboard.jsx (solo saludo)
+- application.properties (permisos roles)
+- Dockerfile (build multi-etapa)
+
+## BASE DATOS ACTUAL
+- 2 usuarios: admin + Anthony Castillo (rol Cliente)
+- 8 roles, 2 clientes (Ana Torres #1, Luis Gomez #2), 1 vehículo (ABC-1234), 2 talleres
+- 0 citas
+
+## COPIAR ESTE PROMPT ENTERO y pegar en Codex con /INIT
+
+[El prompt de arriba]

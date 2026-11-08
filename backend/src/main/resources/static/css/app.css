@@ -1,0 +1,143 @@
+/* ============================================================
+   Taller Norte · hoja de estilos principal
+   Identidad: azul profesional sobre neutros fríos, tarjetas con
+   sombras suaves y microtransiciones consistentes.
+   ============================================================ */
+:root {
+    --primary: #0f172a;
+    --primary-soft: #334155;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --sidebar: #0f172a;
+    --sidebar-hover: #1e293b;
+    --bg-soft: #f1f5f9;
+    --card-border: #e2e8f0;
+    --radius-card: 14px;
+    --radius-control: 10px;
+    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06);
+    --shadow-lift: 0 2px 4px rgba(15, 23, 42, 0.05), 0 16px 32px rgba(15, 23, 42, 0.10);
+    --transition: 0.18s ease;
+}
+* { font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+html, body { background: var(--bg-soft); }
+body { color: var(--primary); }
+::selection { background: rgba(37, 99, 235, 0.18); }
+
+/* Barra de desplazamiento discreta */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; border: 2px solid var(--bg-soft); }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ---------- Barra lateral ---------- */
+.sidebar {
+    background: linear-gradient(180deg, var(--sidebar) 0%, #131f38 100%);
+    min-height: 100vh; color: #fff; position: sticky; top: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+.sidebar .brand { padding: 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.brand-badge {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    width: 42px; height: 42px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; margin-right: 10px; color: #fff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    letter-spacing: 0.4px;
+}
+.sidebar .nav-link, .offcanvas-tn .nav-link {
+    color: #cbd5e1; padding: 0.62rem 0.9rem; border-radius: var(--radius-control);
+    font-weight: 500; font-size: 0.9rem; margin: 3px 0.75rem;
+    display: flex; align-items: center; gap: 0.65rem;
+    border-left: 3px solid transparent;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.sidebar .nav-link svg, .offcanvas-tn .nav-link svg { flex-shrink: 0; opacity: 0.85; }
+.sidebar .nav-link:hover { background: var(--sidebar-hover); color: #fff; }
+.sidebar .nav-link.active {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.22) 0%, var(--sidebar-hover) 100%);
+    color: #fff; border-left-color: var(--accent);
+}
+.sidebar .nav-link.active svg { opacity: 1; }
+.offcanvas-tn { background: linear-gradient(180deg, var(--sidebar) 0%, #131f38 100%); color: #fff; }
+.offcanvas-tn .offcanvas-header { border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 1rem 1.25rem; }
+.offcanvas-tn .nav-link:hover, .offcanvas-tn .nav-link.active { background: var(--sidebar-hover); color: #fff; }
+
+/* ---------- Barra superior ---------- */
+.topbar {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--card-border);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    padding: 0.8rem 1rem 0.8rem 1.25rem; z-index: 1020;
+}
+.avatar {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #fff; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.30);
+    transition: transform var(--transition);
+}
+.avatar + span:hover .avatar { transform: scale(1.05); }
+.page-title { font-size: clamp(1.15rem, 2.4vw, 1.5rem); letter-spacing: -0.01em; }
+.section-h5 { font-size: clamp(0.95rem, 1.9vw, 1.1rem); }
+.role-badge {
+    display: inline-block; padding: 0.22rem 0.65rem; font-size: 0.72rem; font-weight: 600;
+    border-radius: 999px; white-space: nowrap; background: var(--accent-soft); color: #1e40af;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+/* ---------- Tarjetas ---------- */
+.data-card {
+    border: 1px solid var(--card-border); border-radius: var(--radius-card);
+    background: #fff; overflow: hidden; box-shadow: var(--shadow-soft);
+}
+.data-card .card-header { background: #fff; border-bottom: 1px solid var(--card-border); padding: 1rem 1.25rem; }
+.data-card table { margin-bottom: 0; }
+.data-card thead th {
+    background: #f8fafc; border-bottom: 1px solid var(--card-border); font-size: 0.75rem;
+    text-transform: uppercase; letter-spacing: 0.6px; color: #64748b; font-weight: 700; padding: 0.8rem 1rem;
+}
+.data-card tbody td { vertical-align: middle; padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+.data-card tbody tr { transition: background var(--transition); }
+.data-card tbody tr:hover td { background: #f8fafc; }
+.data-card tbody tr:last-child td { border-bottom: 0; }
+.stat-card {
+    border: 1px solid var(--card-border); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft); transition: transform var(--transition), box-shadow var(--transition);
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+.stat-card .card-body { padding: 1.25rem 1.4rem; }
+.stat-value { font-size: clamp(1.5rem, 3.2vw, 2rem); font-weight: 700; color: var(--primary); letter-spacing: -0.02em; }
+.stat-label { font-size: 0.85rem; color: #64748b; }
+.module-card {
+    border: 1px solid var(--card-border); border-radius: var(--radius-card);
+    padding: 1.1rem 1.15rem; background: #fff;
+    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    height: 100%;
+}
+.module-card:hover { border-color: rgba(37, 99, 235, 0.45); transform: translateY(-2px); box-shadow: var(--shadow-lift); }
+
+/* ---------- Controles de formulario ---------- */
+.form-control, .form-select { border-radius: var(--radius-control); border-color: #cbd5e1; transition: border-color var(--transition), box-shadow var(--transition); }
+.form-control:focus, .form-select:focus { border-color: var(--accent); box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.12); }
+.form-label { font-weight: 600; color: #334155; font-size: 0.88rem; }
+.input-group .btn { border-radius: var(--radius-control); }
+
+/* ---------- Botones ---------- */
+.btn { border-radius: var(--radius-control); transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition); }
+.btn:active { transform: translateY(1px); }
+.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.btn-accent:hover, .btn-accent:focus { background: var(--accent-dark); border-color: var(--accent-dark); color: #fff; }
+
+/* ---------- Estados ---------- */
+.empty-state { padding: 2.5rem 1rem; text-align: center; color: #64748b; }
+.toast-container { z-index: 1090; }
+tr.fila-seleccionable { cursor: pointer; }
+tr.fila-seleccionable.table-active td { background: var(--accent-soft); }
+
+@media (max-width: 767.98px) {
+    .topbar small { display: none; }
+    .avatar { width: 38px; height: 38px; font-size: 0.9rem; }
+}

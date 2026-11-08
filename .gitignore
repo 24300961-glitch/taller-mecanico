@@ -1,0 +1,15 @@
+target/
+backend/target/
+logs/
+storage/talleres/
+data/sepomex/
+frontend/node_modules/
+frontend/dist/
+.env
+.idea/
+*.iml
+.build/
+logs-boot/
+.vscode/
+.qodo/
+*.log

@@ -1,0 +1,107 @@
+%% Diagrama de arquitectura del sistema taller mecánico
+%% Capas: Presentación -> Controladores -> Servicios -> Repositorios -> Modelos -> BD
+%% Incluye Docker infraestructura y estrategias de auth/dashboard
+flowchart TB
+    subgraph Presentación [Capa de Presentación]
+        T1[Templates Thymeleaf]
+        T2[window.TN helper JS]
+        T3[Layout shared fragment]
+    end
+    subgraph Controladores [Capa de Controladores REST]
+        C1[RolController API]
+        C2[AuthController API]
+        C3[AdminController API]
+        C4[ClienteController API]
+        C5[VehiculoController API]
+        C6[TallerController API]
+        C7[ApiExceptionHandler]
+    end
+    subgraph Servicios [Capa de Servicios]
+        S1[TallerService]:::service
+        S2[ClienteService]:::service
+        S3[VehiculoService]:::service
+        S4[AuthService]:::service
+        S5[DashboardStrategyService]:::strategy
+        S6[Estrategias por rol: AdministradorDashboard, RecepcionistaDashboard, ClienteDashboard, AsesorDashboard, TécnicoDashboard]:::strategy
+    end
+    subgraph Repositorios [Capa de Repositorios]
+        R1[RolRepository]
+        R2[ClienteRepository]
+        R3[VehiculoRepository]
+        R4[TallerRepository]
+        R5[UserRepository]
+        R6[AuditLogRepository]
+    end
+    subgraph Modelos [Capa de Modelos]
+        M1[Taller]:::model
+        M2[Cliente]:::model
+        M3[Vehiculo]:::model
+        M4[UserAccount]:::model
+        M5[Rol]:::model
+        M6[Permiso]:::model
+        M7[AuditLog]:::model
+    end
+    DB[(Base de datos MySQL)]
+    subgraph Docker [Infraestructura Docker]
+        D1[taller-app]:::docker
+        D2[taller-mysql]:::docker
+    end
+    
+    %% Relaciones Presentación -> Controladores
+    T1 --> C1
+    T2 --> C1
+    T3 --> C1
+    
+    %% Controladores -> Servicios
+    C1 --> S1
+    C2 --> S4
+    C3 --> S1
+    C4 --> S2
+    C5 --> S3
+    C6 --> S1
+    
+    %% Servicios -> Repositorios
+    S1 --> R1
+    S1 --> R4
+    S2 --> R2
+    S3 --> R3
+    S4 --> R5
+    S5 --> R1 & R2 & R3 & R4
+    S6 --> R1 & R2 & R3 & R4
+    
+    %% Repositorios -> Modelos
+    R1 --> M5 & M6
+    R2 --> M2
+    R3 --> M3
+    R4 --> M1
+    R5 --> M4 & M5 & M6
+    R6 --> M7
+    
+    %% Modelos -> BD
+    M1 --> DB
+    M2 --> DB
+    M3 --> DB
+    M4 --> DB
+    M5 --> DB
+    M6 --> DB
+    M7 --> DB
+    
+    %% BD -> Servicios (lecturas)
+    DB --> S1
+    DB --> S2
+    DB --> S3
+    DB --> S4
+    DB --> S5
+    
+    %% Strategies notas
+    style Presentación fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Controladores fill:#fff3e0,stroke:#fb8c00,stroke-width:2px
+    style Servicios fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    style Repositorios fill:#f3e5f5,rgba(156,39,176,1),stroke-width:2px
+    style Modelos fill:#eceff1,rgba(80,80,80,1),stroke-width:2px
+    style Docker fill:#e0e0e0,rgba(0,0,0,0.3),stroke-width:2px
+    style estrategia fill:#f1f8e9,rgba(33,150,243,1),stroke-width:2px
+    
+    %% Etiquetas deestrategias
+    class S5 EstrategiaDashboard
+    class S6 "Estrategias por rol"

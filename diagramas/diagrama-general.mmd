@@ -1,0 +1,44 @@
+%% Diagrama general: cómo encaja esta fase con autenticación y Strategy
+%% Fase: talleres y clientes (identidad, roles, permisos, gestión)
+flowchart TB
+    subgraph Auth [Capa de Autenticación y Seguridad]
+        A1[login.html / registro / recuperar]:::auth
+        A2[BCrypt hash contraseña]:::auth
+        A3[Token recovery 32B SHA-256, 15 min]:::auth
+        A4[change-password invalida sesión anterior]:::auth
+        A5[503 si MAIL_HOST vacío]:::auth
+        A6[Session migration on login]:::auth
+    end
+    subgraph Estrategia [Estrategia (YA DEFINIDA - SIN MODIFICAR)]
+        E1[Autenticación Strategy]:::estrategia
+        E2[Dashboard Strategy por rol]:::estrategia
+        E3[Sin Strategy en taller, cliente, CP y asociación]:::prohibido
+    end
+    subgraph Fase_Actual [Fase Actual: Talleres y Clientes]
+        F1[Identidad y Roles]:::fase
+        F2[Permisos ROLE underscore clave]:::fase
+        F3[Gestión clientes y vehículos]:::fase
+        F4[Taller activo precondición]:::fase
+        F5[Sin duplicados RFC o nombre-dir]:::fase
+        F6[Registro con confirmación coincidencias]:::fase
+    end
+    subgraph Backend [Backend Java 25 + Spring Boot]
+        B1[Spring Security JSESSIONID]:::backend
+        B2[PreAuthorize]:::backend
+        B3[AuditService REQUIRES_NEW]:::backend
+    end
+
+    %% Conexiones
+    A1 --> E1 --> E2
+    E1 --> F1
+    E2 --> F2
+    F1 --> B1
+    F2 --> B2
+    F3 --> B3
+
+    %% Marcos de estilo
+    classDef auth fill:#fff4e5,stroke:#fb8c02,stroke-width:2px,color:#000
+    classDef estrategia fill:#f1f8e9,stroke:#2196f3,stroke-width:2px,color:#000
+    classDef fase fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef backend fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    classDef prohibido fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000

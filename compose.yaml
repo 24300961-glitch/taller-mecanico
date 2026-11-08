@@ -1,0 +1,92 @@
+# ============================================================
+# Docker Compose - Taller Mecánico
+# Base de datos MySQL 8.4 + App Spring Boot (opcional)
+# ============================================================
+# Levantar SOLO MySQL:     docker compose up -d mysql
+# Levantar MySQL + APP:    docker compose up -d --build
+# Apagar todo:             docker compose down
+# Apagar TODO y borrar BD: docker compose down -v
+# ============================================================
+
+name: taller-mecanico
+
+services:
+
+  # =================== BASE DE DATOS MySQL ===================
+  mysql:
+    image: mysql:8.4
+    container_name: taller-mysql
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: taller_mecanico
+      MYSQL_USER: taller
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: America/Mexico_City
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - taller-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 8s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=100
+      - --authentication-policy=*,,
+
+  # =================== APLICACIÓN SPRING BOOT =================
+  app:
+    build: .
+    container_name: taller-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/taller_mecanico?serverTimezone=America/Mexico_City&useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+      DB_DRIVER: com.mysql.cj.jdbc.Driver
+      DB_USERNAME: taller
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DIALECT: org.hibernate.dialect.MySQLDialect
+      DB_DDL_AUTO: validate
+      DB_FLYWAY_ENABLED: "true"
+      H2_CONSOLE_ENABLED: "false"
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      APP_BASE_URL: ${APP_BASE_URL}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL}
+      APP_ADMIN_PASSWORD: ${APP_ADMIN_PASSWORD}
+      JAVA_OPTS: -Xms256m -Xmx512m -XX:+UseSerialGC
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs:/app/logs
+      - ./storage/talleres:/app/storage/talleres
+      - ./data/sepomex:/app/data/sepomex:ro
+    networks:
+      - taller-net
+
+# ============================================================
+volumes:
+  mysql_data:
+    name: taller-mysql-data
+
+networks:
+  taller-net:
+    name: taller-network
+    driver: bridge

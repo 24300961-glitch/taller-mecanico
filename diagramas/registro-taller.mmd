@@ -1,0 +1,22 @@
+%% Diagrama de proceso: Registro de taller paso a paso
+%% Generado con Mermaid sintaxis; SVG se genera manual o con mmdc
+flowchart TD
+    A[Administrador accede /talleres] --> B{Validar permisos Admin}
+    B -->|Tiene ROLE_ADMIN| C[Mostrar formulario Alta taller]
+    C --> D{Llenar datos: nombre, RFC, email, teléfono, dirección}
+    D --> E{CP ingresado (5 dígitos)}
+    E -->|Sí| F[Consultar catálogo SEPOMEX /api/codigos-postales/{cp}]
+    E -->|No| G[Usuario corrige manualmente colonia/municipio/estado]
+    F --> H[Sugerir colonia, municipio, estado en formulario]
+    H --> I[Administrador revisa/correge los datos autocompletados]
+    I --> J[Seleccionar estatus: Activo/Inactivo]
+    J --> K[Subir foto (JPG/JPEG/PNG, máx. 15 MB) - vista previa]
+    K --> L{Validar formulario}
+    L -->|Errores| M[Mostrar errores campo por campo TN.mostrarErrores]
+    L -->|OK| N[POST /api/talleres con FormData]
+    N --> O{Respuesta API}
+    O -->|201| P[Mostrar éxito: taller creado con datos + fotoPath]
+    O -->|409| Q[Mostrar warning: RFC duplicado o nombre+dirección existentes]
+    Q --> R[Mostrar taller existente con datos]
+    P --> S[Actualizar listado cargarTalleres()]
+    S --> T[Mostrar resultado TN.alerta 'éxito']

@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: taller-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/auth/csrf
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_DRIVER
+        value: com.mysql.cj.jdbc.Driver
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_DIALECT
+        value: org.hibernate.dialect.MariaDBDialect
+      - key: DB_DDL_AUTO
+        value: validate
+      - key: DB_FLYWAY_ENABLED
+        value: "true"
+      - key: H2_CONSOLE_ENABLED
+        value: "false"
+      - key: APP_BASE_URL
+        sync: false
+      - key: APP_ADMIN_EMAIL
+        sync: false
+      - key: APP_ADMIN_PASSWORD
+        sync: false
+      - key: TALLERES_STORAGE
+        value: /app/storage/talleres
+      - key: JAVA_OPTS
+        value: -Xms256m -Xmx512m -XX:+UseSerialGC
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false

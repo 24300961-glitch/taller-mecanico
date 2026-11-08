@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 1100 640" style="max-width:1100px;background:#ffffff;" font-family="Segoe UI, Roboto, Arial, sans-serif" role="img" aria-label="Arquitectura fullstack del sistema Taller Norte">
+  <defs>
+    <marker id="flecha" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="none" stroke="#334155" stroke-width="1.6"/>
+    </marker>
+    <linearGradient id="azul" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="oscuro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16213c"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+  </defs>
+
+  <text x="550" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#0f172a">Taller Norte — Arquitectura fullstack</text>
+  <text x="550" y="56" text-anchor="middle" font-size="13" fill="#64748b">SPA React + API Spring Boot en el mismo origen · MySQL 8.4 · Docker Compose</text>
+
+  <!-- Navegador -->
+  <g>
+    <rect x="40" y="90" width="300" height="440" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="190" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Navegador — frontend/ (React)</text>
+    <rect x="60" y="132" width="260" height="66" rx="10" fill="#0f172a"/>
+    <text x="190" y="156" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">React Router</text>
+    <text x="190" y="176" text-anchor="middle" font-size="11" fill="#b6c2d8">12 rutas · guardias por permiso</text>
+    <rect x="60" y="208" width="260" height="66" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="190" y="232" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Páginas + componentes</text>
+    <text x="190" y="252" text-anchor="middle" font-size="11" fill="#64748b">Login · Dashboard · Clientes · Talleres…</text>
+    <rect x="60" y="284" width="260" height="66" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="190" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">api.js + AuthContext</text>
+    <text x="190" y="328" text-anchor="middle" font-size="11" fill="#64748b">fetch + cookie JSESSIONID + CSRF</text>
+    <rect x="60" y="360" width="260" height="66" rx="10" fill="url(#azul)"/>
+    <text x="190" y="384" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">vite build → dist/</text>
+    <text x="190" y="404" text-anchor="middle" font-size="11" fill="#dbeafe">index.html + assets/ con hash</text>
+    <rect x="60" y="436" width="260" height="74" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="190" y="460" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">Mismo origen :8080</text>
+    <text x="190" y="480" text-anchor="middle" font-size="11" fill="#1e40af">sin CORS · credentials same-origin</text>
+  </g>
+
+  <!-- Backend -->
+  <g>
+    <rect x="400" y="90" width="340" height="440" rx="14" fill="url(#oscuro)"/>
+    <text x="570" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">Contenedor taller-app — backend/</text>
+    <rect x="420" y="132" width="300" height="60" rx="10" fill="rgba(37,99,235,.18)" stroke="#93c5fd"/>
+    <text x="570" y="154" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">WebViewController → forward:/index.html</text>
+    <text x="570" y="172" text-anchor="middle" font-size="11" fill="#9fb0c9">conserva @PreAuthorize por ruta</text>
+    <rect x="420" y="202" width="300" height="60" rx="10" fill="rgba(37,99,235,.18)" stroke="#93c5fd"/>
+    <text x="570" y="224" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">REST /api/* + Security (sesión+CSRF)</text>
+    <text x="570" y="242" text-anchor="middle" font-size="11" fill="#9fb0c9">+ GET /api/dashboard · /api/documentacion</text>
+    <rect x="420" y="272" width="300" height="60" rx="10" fill="rgba(37,99,235,.18)" stroke="#93c5fd"/>
+    <text x="570" y="294" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">Servicios + repositorios JPA</text>
+    <text x="570" y="312" text-anchor="middle" font-size="11" fill="#9fb0c9">clientes · vehículos · talleres · roles</text>
+    <rect x="420" y="342" width="300" height="60" rx="10" fill="rgba(37,99,235,.18)" stroke="#93c5fd"/>
+    <text x="570" y="364" text-anchor="middle" font-size="12" font-weight="700" fill="#bfdbfe">Flyway V1…V5 · SEPOMEX 158k filas</text>
+    <text x="570" y="382" text-anchor="middle" font-size="11" fill="#9fb0c9">fotos en /app/storage · /storage/*</text>
+    <rect x="420" y="412" width="300" height="98" rx="10" fill="#ffffff"/>
+    <text x="570" y="434" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">static/ servido por Spring</text>
+    <text x="570" y="454" text-anchor="middle" font-size="11" fill="#334155">index.html (SPA) · assets/ · css · js</text>
+    <text x="570" y="472" text-anchor="middle" font-size="11" fill="#334155">diagramas/ · error.html (fallback)</text>
+    <text x="570" y="492" text-anchor="middle" font-size="11" fill="#334155">thymleaf solo para /error</text>
+  </g>
+
+  <!-- Datos -->
+  <g>
+    <rect x="800" y="90" width="260" height="440" rx="14" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="930" y="118" text-anchor="middle" font-size="14" font-weight="700" fill="#0f172a">Datos y despliegue</text>
+    <rect x="820" y="132" width="220" height="80" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="930" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">taller-mysql 8.4</text>
+    <text x="930" y="178" text-anchor="middle" font-size="11" fill="#64748b">taller_mecanico</text>
+    <text x="930" y="194" text-anchor="middle" font-size="11" fill="#64748b">puerto 3307 → 3306</text>
+    <rect x="820" y="222" width="220" height="80" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="930" y="248" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Volúmenes</text>
+    <text x="930" y="268" text-anchor="middle" font-size="11" fill="#64748b">mysql_data · ./storage · ./logs</text>
+    <text x="930" y="284" text-anchor="middle" font-size="11" fill="#64748b">./data/sepomex (ro)</text>
+    <rect x="820" y="312" width="220" height="98" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="930" y="336" text-anchor="middle" font-size="13" font-weight="700" fill="#0f172a">Dockerfile multi-etapa</text>
+    <text x="930" y="356" text-anchor="middle" font-size="11" fill="#64748b">1) node:20 npm ci + build</text>
+    <text x="930" y="372" text-anchor="middle" font-size="11" fill="#64748b">2) maven:3.9 package</text>
+    <text x="930" y="388" text-anchor="middle" font-size="11" fill="#64748b">3) temurin:25-jre run</text>
+    <rect x="820" y="420" width="220" height="90" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="930" y="444" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">diagramas/ (repo)</text>
+    <text x="930" y="464" text-anchor="middle" font-size="11" fill="#1e40af">este SVG + .md por diagrama</text>
+    <text x="930" y="482" text-anchor="middle" font-size="11" fill="#1e40af">visible en /documentacion</text>
+  </g>
+
+  <!-- Flechas -->
+  <line x1="340" y1="250" x2="396" y2="250" stroke="#334155" stroke-width="1.6" marker-end="url(#flecha)"/>
+  <text x="368" y="240" text-anchor="middle" font-size="10" fill="#334155">HTTPS :8080</text>
+  <line x1="340" y1="330" x2="396" y2="330" stroke="#334155" stroke-width="1.6" marker-end="url(#flecha)"/>
+  <text x="368" y="320" text-anchor="middle" font-size="10" fill="#334155">/api JSON</text>
+  <line x1="744" y1="250" x2="796" y2="250" stroke="#334155" stroke-width="1.6" marker-end="url(#flecha)"/>
+  <text x="770" y="240" text-anchor="middle" font-size="10" fill="#334155">JDBC</text>
+  <line x1="570" y1="534" x2="570" y2="572" stroke="#334155" stroke-width="1.6" marker-end="url(#flecha)"/>
+
+  <text x="550" y="600" text-anchor="middle" font-size="12" font-weight="700" fill="#0f172a">Flujo de autenticación: GET /api/auth/csrf → POST /login (form) → 302 /dashboard → GET /api/auth/me</text>
+  <text x="550" y="622" text-anchor="middle" font-size="11" fill="#64748b">Sin sesión: 401 JSON en /api/* · redirección a /login en rutas de página · POST /logout cierra sesión</text>
+</svg>

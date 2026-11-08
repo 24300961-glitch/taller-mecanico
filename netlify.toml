@@ -1,0 +1,9 @@
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Las rutas de React se resuelven con frontend/public/_redirects

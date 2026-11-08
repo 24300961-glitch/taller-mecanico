@@ -1,0 +1,148 @@
+package mx.tallermecanico.app.auth;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import mx.tallermecanico.app.audit.AuditService;
+import mx.tallermecanico.app.seguridad.Permiso;
+import mx.tallermecanico.app.seguridad.Rol;
+import mx.tallermecanico.app.seguridad.RolRepository;
+import mx.tallermecanico.app.seguridad.SesionService;
+import mx.tallermecanico.app.usuarios.strategy.UserCreationService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api/admin/usuarios")
+public class AdminController {
+
+    private final UserRepository users;
+    private final RolRepository roles;
+    private final AuditService audit;
+    private final SesionService sesiones;
+    private final UserCreationService userCreation;
+
+    /** Construye el controlador con los servicios de administración y alta de usuarios.
+     * @param users repositorio de usuarios
+     * @param roles repositorio de roles
+     * @param audit servicio de auditoría
+     * @param sesiones servicio de expiración de sesiones
+     * @param userCreation servicio que selecciona la estrategia de alta por rol
+     */
+    public AdminController(UserRepository users, RolRepository roles, AuditService audit, SesionService sesiones,
+                           UserCreationService userCreation) {
+        this.users = users;
+        this.roles = roles;
+        this.audit = audit;
+        this.sesiones = sesiones;
+        this.userCreation = userCreation;
+    }
+
+    public record AsignarRolRequest(@NotNull(message = "Selecciona un rol") Long rolId) {}
+
+    /** Datos para crear una cuenta desde el panel administrativo.
+     * @param email correo de acceso
+     * @param fullName nombre visible
+     * @param password contraseña sometida a BCrypt antes de persistir
+     * @param confirmPassword confirmación de contraseña
+     * @param recoveryPhone teléfono E.164 opcional que comienza sin verificar
+     * @param rolId rol que selecciona el administrador
+     */
+    public record CrearUsuarioRequest(
+            @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Email @jakarta.validation.constraints.Size(max = 190) String email,
+            @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 100) String fullName,
+            @jakarta.validation.constraints.NotBlank @ContrasenaSegura String password,
+            @jakarta.validation.constraints.NotBlank String confirmPassword,
+            @jakarta.validation.constraints.Pattern(regexp = "^$|^\\+[1-9]\\d{7,14}$", message = "Usa formato internacional E.164") String recoveryPhone,
+            @NotNull Long rolId) {}
+
+    /** Crea una cuenta delegando en la estrategia correspondiente al rol solicitado.
+     * @param request datos validados del nuevo usuario
+     * @return identificador, correo, nombre y rol de la cuenta creada
+     * @throws ResponseStatusException si el rol es interno o no existe, o el correo ya está usado
+     */
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('ROLES_ASIGNAR')")
+    public Map<String, Object> crear(@Valid @RequestBody CrearUsuarioRequest request) {
+        UserAccount created = userCreation.createForRole(request.email(), request.fullName(), request.password(),
+                request.confirmPassword(), request.recoveryPhone(), request.rolId());
+        return vista(created);
+    }
+
+    /** Lista cuentas disponibles para administración.
+     * @return perfiles resumidos sin hashes ni teléfonos
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyAuthority('USUARIOS_CONSULTAR','ROLES_ASIGNAR')")
+    public List<Map<String, Object>> listar() {
+        return users.findAllByOrderByFullNameAsc().stream().map(AdminController::vista).toList();
+    }
+
+    /** Cambia el rol y expira las sesiones del usuario para actualizar permisos.
+     * @param id identificador de cuenta
+     * @param req identificador del nuevo rol
+     * @param authentication administrador que ejecuta el cambio
+     * @return perfil actualizado y mensaje de resultado
+     * @throws ResponseStatusException si la cuenta o rol no existe o se intenta un cambio inseguro
+     */
+    @PatchMapping("/{id}/rol")
+    @PreAuthorize("hasAuthority('ROLES_ASIGNAR')")
+    @Transactional
+    public Map<String, Object> asignarRol(@PathVariable Long id, @Valid @RequestBody AsignarRolRequest req,
+                                          Authentication authentication) {
+        UserAccount user = users.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El usuario seleccionado no existe"));
+        Rol nuevo = roles.findById(req.rolId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El rol seleccionado no existe"));
+        if (!nuevo.isAsignable()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El rol \"" + nuevo.getNombre() + "\" es interno y no se puede asignar a usuarios");
+        }
+        if (!nuevo.isActivo()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El rol \"" + nuevo.getNombre() + "\" está suspendido. Reactívalo antes de asignarlo.");
+        }
+        if (user.getEmail().equalsIgnoreCase(authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No puedes cambiar tu propio rol. Solicítalo a otro administrador.");
+        }
+        Rol anterior = user.getRol();
+        if (anterior != null && anterior.getId().equals(nuevo.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, user.getFullName() + " ya tiene el rol \"" + nuevo.getNombre() + "\"");
+        }
+        if (anterior != null && anterior.tiene(Permiso.ROLES_CREAR) && !nuevo.tiene(Permiso.ROLES_CREAR)
+                && user.isEnabled() && users.contarActivosConPermiso(Permiso.ROLES_CREAR) <= 1) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede quitar el último usuario con permisos de administración de roles");
+        }
+        user.asignarRol(nuevo);
+        users.save(user);
+        audit.record("USER_ACCOUNT", user.getId(), "ROL_ASIGNADO", user.getEmail(),
+                "de=" + (anterior == null ? "(sin rol)" : anterior.getNombre()) + " a=" + nuevo.getNombre());
+        sesiones.expirarSesiones(user.getEmail());
+        Map<String, Object> r = vista(user);
+        r.put("message", "Rol \"" + nuevo.getNombre() + "\" asignado a " + user.getFullName()
+                + ". Deberá iniciar sesión de nuevo para aplicar los permisos.");
+        return r;
+    }
+
+    /** Convierte una cuenta en su representación pública administrativa.
+     * @param u cuenta cargada desde base de datos
+     * @return mapa de campos no secretos
+     */
+    static Map<String, Object> vista(UserAccount u) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", u.getId());
+        m.put("email", u.getEmail());
+        m.put("fullName", u.getFullName());
+        m.put("rolId", u.getRol() == null ? null : u.getRol().getId());
+        m.put("rol", u.getRol() == null ? null : u.getRol().getNombre());
+        m.put("enabled", u.isEnabled());
+        m.put("ultimoAcceso", u.getLastLoginAt() == null ? null : u.getLastLoginAt().toString());
+        m.put("registro", u.getCreatedAt() == null ? null : u.getCreatedAt().toString());
+        return m;
+    }
+}

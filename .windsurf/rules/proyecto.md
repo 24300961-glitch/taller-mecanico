@@ -1,0 +1,15 @@
+---
+trigger: always_on
+---
+
+# Taller Mecánico
+
+Lee y aplica `AGENTS.md` en la raíz del repositorio.
+
+1. No inventar archivos, pruebas ni resultados.
+2. No ampliar el alcance sin autorización.
+3. No crear datos de prueba en la base de datos persistente.
+4. No tocar `.env`, credenciales ni secretos.
+5. Documentar en español, UTF-8 sin BOM.
+
+Catálogo de agentes: `Spec/arquitectura/orquestador.md`, sección 12.
