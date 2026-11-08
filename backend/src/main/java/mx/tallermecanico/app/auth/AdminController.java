@@ -129,6 +129,69 @@ public class AdminController {
         return r;
     }
 
+    /** Suspende una cuenta para impedir su acceso sin borrar sus datos.
+     * @param id identificador de la cuenta
+     * @param authentication administrador que ejecuta la acción
+     * @return perfil actualizado y mensaje de resultado
+     */
+    @PatchMapping("/{id}/suspender")
+    @PreAuthorize("hasAuthority('ROLES_ASIGNAR')")
+    @Transactional
+    public Map<String, Object> suspender(@PathVariable Long id, Authentication authentication) {
+        return cambiarEstatus(id, authentication, false);
+    }
+
+    /** Reactiva una cuenta previamente suspendida.
+     * @param id identificador de la cuenta
+     * @param authentication administrador que ejecuta la acción
+     * @return perfil actualizado y mensaje de resultado
+     */
+    @PatchMapping("/{id}/reactivar")
+    @PreAuthorize("hasAuthority('ROLES_ASIGNAR')")
+    @Transactional
+    public Map<String, Object> reactivar(@PathVariable Long id, Authentication authentication) {
+        return cambiarEstatus(id, authentication, true);
+    }
+
+    /** Aplica el cambio de estatus con las protecciones de la propia cuenta y del último administrador.
+     * @param id identificador de la cuenta
+     * @param authentication administrador que ejecuta la acción
+     * @param activar true para reactivar; false para suspender
+     * @return perfil actualizado y mensaje de resultado
+     * @throws ResponseStatusException si la cuenta no existe, ya está en ese estado o es la propia cuenta
+     */
+    private Map<String, Object> cambiarEstatus(Long id, Authentication authentication, boolean activar) {
+        UserAccount user = users.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El usuario seleccionado no existe"));
+        if (user.isEnabled() == activar) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    activar ? "La cuenta ya está activa." : "La cuenta ya está suspendida.");
+        }
+        if (!activar && user.getEmail().equalsIgnoreCase(authentication.getName())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No puedes suspender tu propia cuenta.");
+        }
+        if (!activar && user.getRol() != null) {
+            boolean ultimoAdministrador = (user.getRol().tiene(Permiso.ROLES_CREAR)
+                        && users.contarActivosConPermiso(Permiso.ROLES_CREAR) <= 1)
+                    || (user.getRol().tiene(Permiso.ROLES_ASIGNAR)
+                        && users.contarActivosConPermiso(Permiso.ROLES_ASIGNAR) <= 1);
+            if (ultimoAdministrador) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "No se puede suspender al último usuario con permisos de administración.");
+            }
+        }
+        user.setEnabled(activar);
+        users.save(user);
+        audit.record("USER_ACCOUNT", user.getId(), activar ? "USUARIO_REACTIVADO" : "USUARIO_SUSPENDIDO",
+                user.getEmail(), "estado=" + (activar ? "activo" : "suspendido"));
+        if (!activar) sesiones.expirarSesiones(user.getEmail());
+        Map<String, Object> r = vista(user);
+        r.put("message", activar
+                ? "Cuenta de " + user.getFullName() + " reactivada. Ya puede iniciar sesión."
+                : "Cuenta de " + user.getFullName() + " suspendida. Sus sesiones abiertas se cerraron.");
+        return r;
+    }
+
     /** Convierte una cuenta en su representación pública administrativa.
      * @param u cuenta cargada desde base de datos
      * @return mapa de campos no secretos
