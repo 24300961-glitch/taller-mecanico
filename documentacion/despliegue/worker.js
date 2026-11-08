@@ -1,8 +1,10 @@
 // Cloudflare Worker — entrada única del Taller Mecánico
-// Cambia estas dos URLs por las tuyas.
+// Frontend: Netlify · API: Render · Base de datos: MonsterASP
+// Rutas que van a la API: /api/*, /storage/*, /logout y POST /login.
+// Todo lo demás se sirve desde Netlify (SPA).
 
-const FRONTEND = 'https://TU-SITIO.netlify.app';
-const BACKEND = 'https://TU-API.onrender.com';
+const FRONTEND = 'https://tallermecanicog2.netlify.app';
+const BACKEND = 'https://taller-api-a8d9.onrender.com';
 
 export default {
   async fetch(request) {
@@ -28,10 +30,16 @@ export default {
       redirect: 'manual',
     });
 
+    // Las redirecciones del backend (/dashboard, /login?error=...) se devuelven
+    // al dominio del Worker para que el navegador siga dentro de la SPA.
     const salida = new Headers(res.headers);
     const location = salida.get('location');
-    if (location && location.startsWith(BACKEND)) {
-      salida.set('location', location.replace(BACKEND, url.origin));
+    if (location) {
+      const base = new URL(BACKEND);
+      const absoluta = new URL(location, base);
+      if (absoluta.host === base.host) {
+        salida.set('location', url.origin + absoluta.pathname + absoluta.search);
+      }
     }
 
     return new Response(res.body, { status: res.status, headers: salida });
