@@ -25,8 +25,30 @@ let csrfCache = null;
 
 export async function csrf() {
   if (csrfCache) return csrfCache;
-  const res = await fetch('/api/auth/csrf', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
-  const data = await res.json();
+  let res;
+  try {
+    res = await fetch('/api/auth/csrf', { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+  } catch (e) {
+    throw new ApiError(0, 'No hay conexión con el servidor. Verifica tu red e inténtalo de nuevo.', {});
+  }
+  const tipo = res.headers.get('content-type') || '';
+  if (!res.ok || tipo.indexOf('application/json') === -1) {
+    throw new ApiError(
+      res.status || 503,
+      'El servidor backend (Render) no está respondiendo o se está iniciando. Por favor espera unos segundos y vuelve a intentar.',
+      {}
+    );
+  }
+  let data;
+  try {
+    data = await res.json();
+  } catch (e) {
+    throw new ApiError(
+      res.status || 500,
+      'Respuesta inválida del servidor. El backend podría estar reiniciando.',
+      {}
+    );
+  }
   csrfCache = data;
   return data;
 }

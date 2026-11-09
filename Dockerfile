@@ -23,7 +23,8 @@ RUN mvn -q -DskipTests package
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
-RUN mkdir -p /app/logs && chown 1000:1000 /app/logs
+RUN mkdir -p /app/logs /app/storage/talleres /app/storage/vehiculos \
+    && chown -R 1000:1000 /app/logs /app/storage
 COPY --from=build /app/target/taller-mecanico-0.0.1-SNAPSHOT.jar app.jar
 ENV JAVA_OPTS="-Xms256m -Xmx512m"
 EXPOSE 8080

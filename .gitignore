@@ -1,7 +1,9 @@
 target/
 backend/target/
 logs/
-storage/talleres/
+storage/
+backend/storage/
+test-image.png
 data/sepomex/
 frontend/node_modules/
 frontend/dist/

@@ -20,7 +20,15 @@ export default {
     const destino = vaAlBackend ? BACKEND : FRONTEND;
     const nueva = new URL(url.pathname + url.search, destino);
 
-    const headers = new Headers(request.headers);
+    // Filtrar cabeceras conflictivas de Cloudflare (evita el Error 429 por CDN-Loop al llamar a Render)
+    const headers = new Headers();
+    for (const [key, value] of request.headers) {
+      const k = key.toLowerCase();
+      if (!k.startsWith('cf-') && k !== 'cdn-loop' && k !== 'host') {
+        headers.set(key, value);
+      }
+    }
+    headers.set('Host', nueva.host);
     headers.set('X-Forwarded-Host', url.host);
 
     const res = await fetch(nueva, {

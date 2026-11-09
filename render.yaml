@@ -31,6 +31,8 @@ services:
         sync: false
       - key: TALLERES_STORAGE
         value: /app/storage/talleres
+      - key: VEHICULOS_STORAGE
+        value: /app/storage/vehiculos
       - key: JAVA_OPTS
         value: -Xms256m -Xmx512m -XX:+UseSerialGC
       - key: MAIL_HOST

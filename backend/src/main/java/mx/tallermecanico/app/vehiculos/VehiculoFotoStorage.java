@@ -28,7 +28,31 @@ public class VehiculoFotoStorage {
      * @param storage ruta configurable de almacenamiento local
      */
     public VehiculoFotoStorage(@Value("${app.vehiculos.storage:storage/vehiculos}") String storage) {
-        this.storage = Path.of(storage).toAbsolutePath().normalize();
+        this.storage = preparar(Path.of(storage).toAbsolutePath().normalize());
+    }
+
+    /** Garantiza una carpeta escribible; si la configurada no lo es, usa una temporal.
+     * @param base carpeta configurada para las fotos
+     * @return carpeta lista para escribir
+     */
+    private static Path preparar(Path base) {
+        try {
+            Files.createDirectories(base);
+            if (Files.isWritable(base)) return base;
+            log.warn("[Vehículos] La carpeta {} no es escribible; se usará una temporal.", base);
+        } catch (IOException e) {
+            log.warn("[Vehículos] No se pudo preparar {}: {}. Se usará una temporal.", base, e.getMessage());
+        }
+        String nombre = base.getFileName() == null ? "fotos" : base.getFileName().toString();
+        Path alterna = Path.of(System.getProperty("java.io.tmpdir"), "taller-mecanico", nombre)
+                .toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(alterna);
+            log.warn("[Vehículos] Almacenamiento temporal activo: {}", alterna);
+        } catch (IOException e) {
+            log.error("[Vehículos] Tampoco se pudo crear el almacenamiento temporal {}", alterna, e);
+        }
+        return alterna;
     }
 
     /** Valida extensión, peso y firma binaria, y persiste la foto con un nombre aleatorio.
