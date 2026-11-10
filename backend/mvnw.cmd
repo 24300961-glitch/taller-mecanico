@@ -18,20 +18,18 @@
 @REM ----------------------------------------------------------------------------
 
 @REM ----------------------------------------------------------------------------
-@REM Apache Maven Wrapper startup batch script, version 3.3.2
+@REM Apache Maven Wrapper startup batch script, version 3.3.4
 @REM
 @REM Required ENV vars:
-@REM ------------------
-@REM   JAVA_HOME - location of a JDK home dir
+@REM JAVA_HOME - location of a JDK home dir
 @REM
 @REM Optional ENV vars
-@REM -----------------
-@REM   MAVEN_BATCH_ECHO - set to 'on' to enable the echoing of the batch commands
-@REM   MAVEN_BATCH_PAUSE - set to 'on' to wait for a keystroke before ending
-@REM   MAVEN_OPTS - parameters passed to the Java VM when running Maven
+@REM MAVEN_BATCH_ECHO - set to 'on' to enable the echoing of the batch commands
+@REM MAVEN_BATCH_PAUSE - set to 'on' to wait for a keystroke before ending
+@REM MAVEN_OPTS - parameters passed to the Java VM when running Maven
 @REM     e.g. to debug Maven itself, use
-@REM       set MAVEN_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000
-@REM   MAVEN_SKIP_RC - flag to disable loading of mavenrc files
+@REM set MAVEN_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000
+@REM MAVEN_SKIP_RC - flag to disable loading of mavenrc files
 @REM ----------------------------------------------------------------------------
 
 @REM Begin all REM lines with '@' in case MAVEN_BATCH_ECHO is 'on'
@@ -61,24 +59,22 @@ set ERROR_CODE=0
 @REM ==== START VALIDATION ====
 if not "%JAVA_HOME%" == "" goto OkJHome
 
-echo.
-echo Error: JAVA_HOME is not defined correctly. >&2
-echo   We cannot execute "%JAVA_HOME%\bin\java.exe" >&2
-echo.
+echo. >&2
+echo Error: JAVA_HOME not found in your environment. >&2
 echo Please set the JAVA_HOME variable in your environment to match the >&2
 echo location of your Java installation. >&2
-echo.
+echo. >&2
 goto error
 
 :OkJHome
 if exist "%JAVA_HOME%\bin\java.exe" goto init
 
-echo.
+echo. >&2
 echo Error: JAVA_HOME is set to an invalid directory. >&2
-echo   JAVA_HOME = "%JAVA_HOME%" >&2
-echo   Please set the JAVA_HOME variable in your environment to match the >&2
+echo JAVA_HOME = "%JAVA_HOME%" >&2
+echo Please set the JAVA_HOME variable in your environment to match the >&2
 echo location of your Java installation. >&2
-echo.
+echo. >&2
 goto error
 
 @REM ==== END VALIDATION ====
@@ -91,22 +87,23 @@ goto error
 set MAVEN_PROJECTBASEDIR=%MAVEN_BASEDIR%
 IF NOT "%MAVEN_PROJECTBASEDIR%"=="" goto endDetectBaseDir
 
-set EXIST_DIR=%CD%
-set SEARCH_DIR=%EXIST_DIR%
-set WRAPPER_JAR=""
-set WRAPPER_PROPERTIES=""
-:readBaseDir
-IF EXIST "%SEARCH_DIR%\pom.xml" (
-  IF EXIST "%SEARCH_DIR%\.mvn\wrapper\maven-wrapper.jar" (
-    SET "WRAPPER_JAR=%SEARCH_DIR%\.mvn\wrapper\maven-wrapper.jar"
-    SET "WRAPPER_PROPERTIES=%SEARCH_DIR%\.mvn\wrapper\maven-wrapper.properties"
-    goto endDetectBaseDir
-  )
-)
-SET PARENT_DIR=%SEARCH_DIR%\..
-IF "%PARENT_DIR%"=="%SEARCH_DIR%" goto endDetectBaseDir
-SET SEARCH_DIR=%PARENT_DIR%
-goto readBaseDir
+set EXEC_DIR=%CD%
+set WDIR=%EXEC_DIR%
+:findBaseDir
+IF EXIST "%WDIR%"\.mvn goto baseDirFound
+cd ..
+IF "%WDIR%"=="%CD%" goto baseDirNotFound
+set WDIR=%CD%
+goto findBaseDir
+
+:baseDirFound
+set MAVEN_PROJECTBASEDIR=%WDIR%
+cd "%EXEC_DIR%"
+goto endDetectBaseDir
+
+:baseDirNotFound
+set MAVEN_PROJECTBASEDIR=%EXEC_DIR%
+cd "%EXEC_DIR%"
 
 :endDetectBaseDir
 
@@ -118,19 +115,15 @@ for /F "usebackq delims=" %%a in ("%MAVEN_PROJECTBASEDIR%\.mvn\jvm.config") do s
 
 :endReadAdditionalConfig
 
-IF "%WRAPPER_JAR%"=="" (
-  echo.
-  echo Error: maven-wrapper.jar not found in %SEARCH_DIR%\.mvn\wrapper\ >&2
-  echo   Run .\0-INSTALAR-MAVEN-WRAPPER.ps1 first, or: >&2
-  echo   mvn wrapper:wrapper -Dmaven=3.9.9 >&2
-  echo.
-  goto error
-)
-
 SET MAVEN_JAVA_EXE="%JAVA_HOME%\bin\java.exe"
+set WRAPPER_JAR="%MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.jar"
 set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
 
-set WRAPPER_URL=""
+set WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.3.4/maven-wrapper-3.3.4.jar"
+
+FOR /F "usebackq tokens=1,2 delims==" %%A IN ("%MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.properties") DO (
+    IF "%%A"=="wrapperUrl" SET WRAPPER_URL=%%B
+)
 
 @REM Extension to allow automatically downloading the maven-wrapper.jar from Maven-central
 @REM This allows using the maven wrapper in projects that prohibit checking in binary data.
@@ -140,11 +133,8 @@ if exist %WRAPPER_JAR% (
     )
 ) else (
     if not "%MVNW_REPOURL%" == "" (
-        SET WRAPPER_URL="%MVNW_REPOURL%/org/apache/maven/wrapper/maven-wrapper/3.3.2/maven-wrapper-3.3.2.jar"
-    ) else (
-        SET WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.3.2/maven-wrapper-3.3.2.jar"
+        SET WRAPPER_URL="%MVNW_REPOURL%/org/apache/maven/wrapper/maven-wrapper/3.3.4/maven-wrapper-3.3.4.jar"
     )
-
     if "%MVNW_VERBOSE%" == "true" (
         echo Couldn't find %WRAPPER_JAR%, downloading it ...
         echo Downloading from: %WRAPPER_URL%
@@ -162,6 +152,25 @@ if exist %WRAPPER_JAR% (
     )
 )
 @REM End of extension
+
+@REM If specified, validate the SHA-256 sum of the Maven wrapper jar file
+SET WRAPPER_SHA_256_SUM=""
+FOR /F "usebackq tokens=1,2 delims==" %%A IN ("%MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.properties") DO (
+    IF "%%A"=="wrapperSha256Sum" SET WRAPPER_SHA_256_SUM=%%B
+)
+IF NOT %WRAPPER_SHA_256_SUM%=="" (
+    powershell -Command "&{"^
+       "Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash;"^
+       "$hash = (Get-FileHash \"%WRAPPER_JAR%\" -Algorithm SHA256).Hash.ToLower();"^
+       "If('%WRAPPER_SHA_256_SUM%' -ne $hash){"^
+       "  Write-Error 'Error: Failed to validate Maven wrapper SHA-256, your Maven wrapper might be compromised.';"^
+       "  Write-Error 'Investigate or delete %WRAPPER_JAR% to attempt a clean download.';"^
+       "  Write-Error 'If you updated your Maven version, you need to update the specified wrapperSha256Sum property.';"^
+       "  exit 1;"^
+       "}"^
+       "}"
+    if ERRORLEVEL 1 goto error
+)
 
 @REM Provide a "standardized" way to retrieve the CLI args that will
 @REM work with both Windows and non-Windows executions.
