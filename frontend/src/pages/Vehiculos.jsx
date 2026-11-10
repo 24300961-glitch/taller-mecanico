@@ -345,7 +345,8 @@ export default function Vehiculos() {
     for (const f of archivos) {
       const ext = f.name.split('.').pop().toLowerCase();
       if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext) || (f.type && !f.type.startsWith('image/'))) {
-        setErrorFotos('Solo se admiten fotos (JPG, PNG o WebP). No se permiten documentos.');
+        setErrorFotos(`El archivo "${f.name}" no es JPG, PNG o WebP. Conviértelo a JPG o PNG e inténtalo de nuevo.`);
+        document.getElementById('vhFotos')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
       if (f.size > 15 * 1024 * 1024) {
@@ -369,8 +370,10 @@ export default function Vehiculos() {
         return;
       }
       setForm((f) => ({ ...f, fotos: total }));
+      document.getElementById('vhFotos')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (e) {
       setErrorFotos(e.message || 'No se pudo subir la foto.');
+      document.getElementById('vhFotos')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } finally {
       setSubiendoFotos(false);
     }
@@ -591,9 +594,9 @@ export default function Vehiculos() {
             <input
               id="vhFotos" name="fotos" type="file"
               className={`form-control${errores.fotos || errorFotos ? ' is-invalid' : ''}`}
-              accept="image/jpeg,image/png,image/webp" multiple onChange={subirFotos} disabled={subiendoFotos}
+              accept="image/*" multiple onChange={subirFotos} disabled={subiendoFotos}
             />
-            <div className="form-text">Solo fotos JPG, PNG o WebP (nada de documentos). Hasta {MAX_FOTOS} fotos, máximo 15 MB cada una.</div>
+            <div className="form-text">Solo fotos JPG, PNG o WebP (nada de documentos). Hasta {MAX_FOTOS} fotos, máximo 15 MB cada una. Si tu foto es HEIC (iPhone) u otro formato, conviértela a JPG.</div>
             {(errores.fotos || errorFotos) && <div className="invalid-feedback d-block">{errorFotos || errores.fotos}</div>}
             {subiendoFotos && <div className="small text-muted mt-1">Subiendo foto...</div>}
             {fotosActuales.length > 0 && (
