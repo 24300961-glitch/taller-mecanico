@@ -82,7 +82,7 @@ export function Modal({ abierto, titulo, onCerrar, onSubmit, pie, children, gran
   return (
     <>
       <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-modal="true">
-        <div className={`modal-dialog${grande ? ' modal-lg modal-dialog-scrollable' : ''}`}>
+        <div className={`modal-dialog modal-dialog-scrollable${grande ? ' modal-lg' : ''}`}>
           <div className="modal-content">
             <form
               noValidate
