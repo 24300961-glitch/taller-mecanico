@@ -5,7 +5,7 @@
 # ============================================================
 
 # ---- Etapa 1: compilar la SPA React ----
-FROM node:20-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /fe
 COPY frontend/package*.json ./
 RUN npm ci --no-audit --no-fund
