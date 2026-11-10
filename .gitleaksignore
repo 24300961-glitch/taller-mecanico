@@ -1,0 +1,5 @@
+# Falsos positivos aceptados del escáner de secretos.
+#
+# .env.example solo contiene marcadores de ejemplo, no credenciales reales.
+# El valor de APP_ADMIN_PASSWORD es un texto de ayuda ("crea-una-clave-...").
+e943d22c8372dc337f9bb903b7c229887f045c23:.env.example:generic-api-key:9
