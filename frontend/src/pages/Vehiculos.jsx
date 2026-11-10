@@ -447,10 +447,12 @@ export default function Vehiculos() {
                   <td className="small">
                     <div className="d-flex align-items-center gap-2">
                       {primeraFoto(v.fotos) ? (
-                        <img
-                          src={primeraFoto(v.fotos)} alt="Foto del vehículo"
-                          style={{ width: 46, height: 36, objectFit: 'cover', borderRadius: 4, border: '1px solid #dee2e6' }}
-                        />
+                        <a href={primeraFoto(v.fotos)} target="_blank" rel="noreferrer" title="Ver foto completa">
+                          <img
+                            src={primeraFoto(v.fotos)} alt="Foto del vehículo"
+                            style={{ width: 46, height: 36, objectFit: 'cover', borderRadius: 4, border: '1px solid #dee2e6' }}
+                          />
+                        </a>
                       ) : (
                         <span className="text-muted text-center" style={{ width: 46 }} title="Sin fotos">—</span>
                       )}
@@ -603,10 +605,12 @@ export default function Vehiculos() {
               <div className="d-flex flex-wrap gap-2 mt-2">
                 {fotosActuales.map((ruta) => (
                   <div key={ruta} className="position-relative">
-                    <img
-                      src={ruta} alt="Foto del vehículo"
-                      style={{ width: 104, height: 78, objectFit: 'cover', borderRadius: 6, border: '1px solid #dee2e6' }}
-                    />
+                    <a href={ruta} target="_blank" rel="noreferrer" title="Ver foto completa">
+                      <img
+                        src={ruta} alt="Foto del vehículo"
+                        style={{ width: 104, height: 78, objectFit: 'cover', borderRadius: 6, border: '1px solid #dee2e6' }}
+                      />
+                    </a>
                     <button
                       type="button" className="btn btn-danger position-absolute top-0 end-0"
                       style={{ padding: '0 6px', lineHeight: 1.2, fontSize: 12 }}
