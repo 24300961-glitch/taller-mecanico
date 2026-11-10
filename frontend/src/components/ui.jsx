@@ -86,6 +86,7 @@ export function Modal({ abierto, titulo, onCerrar, onSubmit, pie, children, gran
           <div className="modal-content">
             <form
               noValidate
+              style={{ display: 'flex', flexDirection: 'column', maxHeight: '100%', minHeight: 0 }}
               onSubmit={(ev) => {
                 ev.preventDefault();
                 if (onSubmit) onSubmit(ev);
@@ -95,7 +96,7 @@ export function Modal({ abierto, titulo, onCerrar, onSubmit, pie, children, gran
                 <h2 className="modal-title h5">{titulo}</h2>
                 <button type="button" className="btn-close" aria-label="Cerrar" onClick={onCerrar} />
               </div>
-              <div className="modal-body">{children}</div>
+              <div className="modal-body" style={{ minHeight: 0 }}>{children}</div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline-secondary" onClick={onCerrar}>
                   Cancelar
